@@ -5,12 +5,6 @@
 #include <stdlib.h>
 #include <sys/sysmacros.h>
 
-// int stat(const char *pathname, struct stat *statbuf);
-// int fstat(int fd, struct stat *statbuf);
-// int lstat(const char *pathname, struct stat *statbuf);
-
-
-
 int main(int argc, char *argv[]) {
     struct stat sb;
 
@@ -25,12 +19,11 @@ int main(int argc, char *argv[]) {
     }
 
     printf("File:                     %s\n", argv[1]);
-
-    printf("ID of containing device:  [%lx,%lx]\n", 
-        (long) major(sb.st_dev), (long) minor(sb.st_dev));
+    printf("Size:                     %lld bytes\n", (long long) sb.st_size); 
+    printf("Blocks:                   %lld\n", (long long) sb.st_blocks);
+    printf("IO Block:                 %ld bytes\n", (long) sb.st_blksize);
 
     printf("File type:                ");
-
     switch (sb.st_mode & S_IFMT) {
         case S_IFBLK:  printf("block device\n");            break;
         case S_IFCHR:  printf("character device\n");        break;
@@ -42,26 +35,21 @@ int main(int argc, char *argv[]) {
         default:       printf("unknown?\n");                break;
     }
 
-    printf("I-node number:            %ld\n", (long) sb.st_ino);
+    printf("ID of containing device:  %ld/%ld\n", (long) major(sb.st_dev), (long) minor(sb.st_dev));
 
-    printf("Mode:                     %lo (octal)\n",
-       (unsigned long) sb.st_mode);
+    printf("Inode:                    %ld\n", (long) sb.st_ino);
 
-    printf("Link count:               %ld\n", (long) sb.st_nlink);
-    printf("Ownership:                UID=%ld   GID=%ld\n",
-       (long) sb.st_uid, (long) sb.st_gid);
+    //printf("Mode:                     %lo (octal)\n", (unsigned long) sb.st_mode);
 
-    printf("Preferred I/O block size: %ld bytes\n",
-       (long) sb.st_blksize);
-    printf("File size:                %lld bytes\n",
-       (long long) sb.st_size);
-    printf("Blocks allocated:         %lld\n",
-       (long long) sb.st_blocks);
-    printf("Last status change:       %s", ctime(&sb.st_ctime));
-    printf("Last file access:         %s", ctime(&sb.st_atime));
-    printf("Last file modification:   %s", ctime(&sb.st_mtime));
+    printf("Links:                    %ld\n", (long) sb.st_nlink);
+    printf("Access:                   %lo (octal)  Uid:%ld  Gid:%ld  \n", (unsigned long) sb.st_mode, (long) sb.st_uid, (long) sb.st_gid);
+    printf("Access:                   %s", ctime(&sb.st_atime));
+    printf("Modified:                 %s", ctime(&sb.st_mtime));
+    printf("Change:                   %s", ctime(&sb.st_ctime));
+
 
     exit(0);
 }
+
 
 
