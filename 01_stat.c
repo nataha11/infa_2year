@@ -1,17 +1,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sysmacros.h>
 #include <string.h>
 
 struct filetype {
-    char * typename;
+    const char * typename;
     char ctype;
 };
 
-struct filetype fill_struct(struct filetype * f, char * typnam, char type);
+struct filetype fill_struct(struct filetype * f, const char * typnam, char type);
 struct filetype get_file_type(int mode);
 char * access_rights(int rmode);
 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (lstat(argv[1], &sb) == -1) {        //почему lstat а не stat?
+    if (lstat(argv[1], &sb) == -1) {
         perror("lstat");
         exit(1);
     }
@@ -48,42 +48,40 @@ int main(int argc, char *argv[]) {
 }
 
 
-
-
-
-
-
-struct filetype fill_struct(struct filetype * f, char * typnam, char type) {
+struct filetype fill_struct(struct filetype * f, const char * typnam, char type) {
     f->typename = typnam;
     f->ctype = type;
-    return *f;
+    return * f;
 }
 
 struct filetype get_file_type(int mode) {
     struct filetype f;
     switch (mode & S_IFMT) {
-        case S_IFBLK:  {return fill_struct(&f, "block device", ' '); }  
-        case S_IFCHR:  {return fill_struct(&f, "character device", ' '); }
-        case S_IFDIR:  {return fill_struct(&f, "directory", 'd'); }       
-        case S_IFIFO:  {return fill_struct(&f, "FIFO/pipe", ' '); }        
-        case S_IFLNK:  {return fill_struct(&f, "symlink", ' '); }          
-        case S_IFREG:  {return fill_struct(&f, "regular file", '-'); }   
-        case S_IFSOCK: {return fill_struct(&f, "socket", ' '); }          
-        default:       {return fill_struct(&f, "unknown?", ' '); }       
+        case S_IFBLK:  {return fill_struct(&f, "block device", 'b'); }
+        case S_IFCHR:  {return fill_struct(&f, "character device", 'c'); }
+        case S_IFDIR:  {return fill_struct(&f, "directory", 'd'); }
+        case S_IFIFO:  {return fill_struct(&f, "FIFO/pipe", 'p'); }
+        case S_IFLNK:  {return fill_struct(&f, "symlink", 'i'); }     
+        case S_IFREG:  {return fill_struct(&f, "regular file", '-'); }
+        case S_IFSOCK: {return fill_struct(&f, "socket", 's'); } 
+        default:       {return fill_struct(&f, "unknown?", '?'); }
     }
 }
 
 char * access_rights(int rmode) {
-    int n = 9;
-    char * rights = malloc((n + 1) * sizeof(char));
-    for (int i = n - 1; i >= 0; i--) {
-        char ch = (rmode & (1 << i)) ? "xwr"[i % 3] : '-';
-        rights[(n - 1) - i] = ch;
-    }
 
+    int n = sizeof("rwxrwxrwx") - 1;
+    char rights[n + 1];
+
+    for (int i = 0; i < n; i++) {
+        rights[i] = (rmode & 0777) & (1 << (n - 1 - i)) ? "rwx"[i % 3] : '-';
+    }
     rights[n] = '\0';
-    return rights;
+
+    char allrigts[20];
+    return strcpy(allrigts, rights);    
 }
+
 
 
 
