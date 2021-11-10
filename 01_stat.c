@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct filetype {
     const char * typename;
@@ -30,8 +31,31 @@ int main(int argc, char *argv[]) {
     }
 
     struct filetype filtyp = get_file_type(sb.st_mode);
+    char * filename;
 
-    printf("File:                     %s\n", argv[1]);
+    if(filtyp.ctype == 'l') {
+        //if symlink, add " -> target" to linkname
+        char * buf = malloc(sb.st_size + 1);
+        if (buf == NULL) {
+            perror("malloc failed");
+            return -1;
+        }
+
+        ssize_t nbytes = readlink(argv[1], buf, sb.st_size);
+        if (nbytes == -1) {
+            perror("readlink failed");
+            return -2;
+        }
+        filename = malloc(sizeof(argv[1]) + sizeof(" -> ") + sizeof(buf) + 3);
+        strcat(filename, argv[1]);
+        strcat(filename, " -> ");
+        strcat(filename, buf);
+        free(buf);
+    } else
+        filename = argv[1];
+
+
+    printf("File:                     %s\n", filename);
     printf("Size:                     %lld bytes\n", (long long) sb.st_size); 
     printf("Blocks:                   %lld\n", (long long) sb.st_blocks);
     printf("IO Block:                 %ld bytes\n", (long) sb.st_blksize);
@@ -47,7 +71,6 @@ int main(int argc, char *argv[]) {
     exit(0);
 }
 
-
 struct filetype fill_struct(struct filetype * f, const char * typnam, char type) {
     f->typename = typnam;
     f->ctype = type;
@@ -61,10 +84,10 @@ struct filetype get_file_type(int mode) {
         case S_IFCHR:  {return fill_struct(&f, "character device", 'c'); }
         case S_IFDIR:  {return fill_struct(&f, "directory", 'd'); }
         case S_IFIFO:  {return fill_struct(&f, "FIFO/pipe", 'p'); }
-        case S_IFLNK:  {return fill_struct(&f, "symlink", 'i'); }     
+        case S_IFLNK:  {return fill_struct(&f, "symbolic link", 'l'); }     
         case S_IFREG:  {return fill_struct(&f, "regular file", '-'); }
         case S_IFSOCK: {return fill_struct(&f, "socket", 's'); } 
-        default:       {return fill_struct(&f, "unknown?", '?'); }
+        default:       {return fill_struct(&f, "unknown", '?'); }
     }
 }
 
@@ -77,9 +100,8 @@ char * access_rights(int rmode) {
         rights[i] = (rmode & 0777) & (1 << (n - 1 - i)) ? "rwx"[i % 3] : '-';
     }
     rights[n] = '\0';
-
-    char allrigts[20];
-    return strcpy(allrigts, rights);    
+    char * r = rights;
+    return r;    
 }
 
 
