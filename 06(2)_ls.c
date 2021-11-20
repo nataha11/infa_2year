@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 
 char dtype_letter(unsigned d_type) {
@@ -34,40 +35,43 @@ char stattype(unsigned mode) {
 
 int main(int argc, char const *argv[]) {
 
-    if(argc > 1) {
+    if(argc > 2) {
         printf("Too many arguments\n");
-        printf("Usage: %s\n", argv[0]);
+        printf("Usage: %s [path]\n", argv[0]);
         return 1;
     }
 
-    DIR * dir_fd = opendir(".");
+    DIR * dir_fd;
+    if(argc == 2) {
+        dir_fd = opendir(argv[1]);
+    } else
+        dir_fd = opendir(".");
 
-    if (dir_fd == NULL) {
+    if (dir_fd == NULL) {     
         perror("opendir failed");
         return 2;
     }
 
     struct dirent * entry;
-	while((entry = readdir(dir_fd)) != NULL) {
+    while((entry = readdir(dir_fd)) != NULL) {
         char type = dtype_letter(entry->d_type);
         if (type == '?') {
-			struct stat sb;
-			if(lstat(entry->d_name, &sb) == -1) {
+            struct stat sb;
+            if(lstat(entry->d_name, &sb) == -1) {
                 perror ("lstat failed");
                 return 3;
 
             } else {
                 type = stattype(sb.st_mode);
             }
-		}
-		printf("%c %s\n", type, entry->d_name);		
-	}
+        }
+        printf("%c %s\n", type, entry->d_name);		
+    }
 
     if(closedir(dir_fd) == -1) {
         perror("closedir failed");
         return 4;
-    }
-
+    }    	
 	return 0;
 }
 
