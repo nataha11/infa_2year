@@ -8,6 +8,7 @@
 #include <sys/sysmacros.h>
 
 int main(int argc, char const *argv[]) {
+    
     if (argc != 3) {
         fprintf(stderr, "Usage: %s src dest\n", argv[0]);
         return 1;
@@ -35,6 +36,7 @@ int main(int argc, char const *argv[]) {
         perror("Failed to open or create dest file");
         return 5;
     }
+
     char buf[sb.st_size];
     ssize_t nbytes, nbytes_w;    
 
@@ -51,6 +53,7 @@ int main(int argc, char const *argv[]) {
 			offset_w += nbytes_w;
 		}
 	}
+
 	if (nbytes == -1) {
 		perror("pread failed");
 		return 7;

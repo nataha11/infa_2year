@@ -115,6 +115,7 @@ int copy_reg(char const *argv[], int bufsize) {
         perror("Closing dest file failed");
         return -6;
     }
+    
     return 0;
 }
 
