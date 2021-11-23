@@ -122,6 +122,7 @@ PID -- process identifier (ID)
 состояния процесса: готов к исполнению, спит, исполняется, зомби (процесс, который его запустил (PPID -- PARENT ID), 
 ps   -- показывает процессы системы
 ps ux -eH
+ps -aux
 
 man 7 credentials
 SID -- session id, чем отличается от PGID
@@ -157,7 +158,8 @@ fork + execve
 posix_spawn
 
 15.1 программа, которая сопротивляется своему завершению 
-назначить обработчиков сигналов signal/signation
+назначить обработчиков сигналов signal/sigaction
+kill -s signal pid -- послать сигнал signal процессу pid
 15.2  задаче 10 добавить корректное завершение работы
 
 15* signalfd/sigqueue
@@ -181,7 +183,7 @@ pipe
 gzip -- сжать
 gzip -d -- разжать
 
-upd 20/11
+upd 20/11 python
 import select #есть epoll, poll, select обертки
 
 
