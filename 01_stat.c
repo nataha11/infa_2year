@@ -55,6 +55,17 @@ int main(int argc, char *argv[]) {
         filename = argv[1];
 
 
+    //get rights
+    int rmode = sb.st_mode & ALLPERMS;
+    int n = sizeof("rwxrwxrwx");
+    char rights[n + 1];
+    rights[0] = filtyp.ctype;
+    for(int i = 0; i < n - 1; i++) {
+        rights[n - 1 - i] = ((rmode & (1 << i))? "xwr"[i % 3] : '-');
+    }
+    rights[n] = '\0';
+
+
     printf("File:                     %s\n", filename);
     printf("Size:                     %lld bytes\n", (long long) sb.st_size); 
     printf("Blocks:                   %lld\n", (long long) sb.st_blocks);
@@ -63,7 +74,7 @@ int main(int argc, char *argv[]) {
     printf("Device ID:                %lxh/%ldd\n", (long) sb.st_dev, (long) sb.st_dev);
     printf("Inode:                    %ld\n", (long) sb.st_ino);
     printf("Links:                    %ld\n", (long) sb.st_nlink);
-    printf("Access:                   (%04lo/%c%s)  Uid:%ld  Gid:%ld  \n", (unsigned long) sb.st_mode & ALLPERMS, filtyp.ctype, access_rights(sb.st_mode & ALLPERMS), (long) sb.st_uid, (long) sb.st_gid);
+    printf("Access:                   (%04lo/%s)  Uid:%ld  Gid:%ld  \n", (unsigned long) sb.st_mode & ALLPERMS, rights, (long) sb.st_uid, (long) sb.st_gid);
     printf("Access:                   %s", ctime(&sb.st_atime));
     printf("Modified:                 %s", ctime(&sb.st_mtime));
     printf("Change:                   %s", ctime(&sb.st_ctime));
@@ -89,19 +100,6 @@ struct filetype get_file_type(int mode) {
         case S_IFSOCK: {return fill_struct(&f, "socket", 's'); } 
         default:       {return fill_struct(&f, "unknown", '?'); }
     }
-}
-
-char * access_rights(int rmode) {
-
-    int n = sizeof("rwxrwxrwx") - 1;
-    char rights[n + 1];
-
-    for (int i = 0; i < n; i++) {
-        rights[i] = (rmode & 0777) & (1 << (n - 1 - i)) ? "rwx"[i % 3] : '-';
-    }
-    rights[n] = '\0';
-    char * r = rights;
-    return r;    
 }
 
 
