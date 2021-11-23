@@ -2,12 +2,15 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <errno.h>
 
 
-char dtype_letter(unsigned d_type) {
+/*char dtype_letter(unsigned d_type) {
     switch(d_type) {
         case DT_BLK :  return 'b';
         case DT_CHR :  return 'c';
@@ -18,7 +21,7 @@ char dtype_letter(unsigned d_type) {
         case DT_SOCK : return 's';
         default :      return '?';
     }
-}
+}*/
 
 char stattype(unsigned mode) {
     switch (mode & S_IFMT) {
@@ -43,9 +46,12 @@ int main(int argc, char const *argv[]) {
 
     DIR * dir_fd;
     if(argc == 2) {
-        dir_fd = opendir(argv[1]);
-    } else
-        dir_fd = opendir(".");
+        if(chdir(argv[1]) == -1) {
+            perror("chdir");
+            return 1;
+        }
+    } 
+    dir_fd = opendir(".");
 
     if (dir_fd == NULL) {     
         perror("opendir failed");
@@ -54,18 +60,25 @@ int main(int argc, char const *argv[]) {
 
     struct dirent * entry;
     while((entry = readdir(dir_fd)) != NULL) {
-        char type = dtype_letter(entry->d_type);
-        if (type == '?') {
             struct stat sb;
-            if(lstat(entry->d_name, &sb) == -1) {
+            if(lstat(entry->d_name, &sb) == -1) {//pathname
+                printf("entry->d_name = %s\n", entry->d_name);
                 perror ("lstat failed");
                 return 3;
 
-            } else {
-                type = stattype(sb.st_mode);
             }
-        }
-        printf("%c %s\n", type, entry->d_name);		
+            //get rights
+            int rmode = sb.st_mode & ALLPERMS;
+            int n = sizeof("rwxrwxrwx");
+            char rights[n + 1];
+            rights[0] = stattype(sb.st_mode);
+            for(int i = 0; i < n - 1; i++) {
+                rights[n - 1 - i] = ((rmode & (1 << i))? "xwr"[i % 3] : '-');
+            }
+            rights[n] = '\0';
+                 
+            
+            printf("%s %s\n", rights, entry->d_name);		
     }
 
     if(closedir(dir_fd) == -1) {
