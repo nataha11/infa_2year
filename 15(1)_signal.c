@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define N 65
+
 volatile int g_last_signal;
 
 void proc_info(void) {
@@ -18,45 +20,15 @@ void sig_handler(int signum) {
 int main(void) {
 
     proc_info();
-
-    int sig_consts[26] = {
-        SIGINT, 
-        SIGQUIT, 
-        SIGTSTP, 
-        SIGTERM,
-        SIGHUP,
-        SIGABRT,
-        SIGALRM,
-        SIGFPE,
-        SIGILL,
-        SIGPIPE,
-        SIGSEGV,
-        SIGTTIN,
-        SIGTTOU,
-        SIGPOLL,
-        SIGPROF,
-        SIGSYS,
-        SIGPROF,
-        SIGVTALRM,
-        SIGXCPU,
-        SIGXFSZ,
-        SIGTRAP,
-        SIGUSR1,
-        SIGUSR2,
-        SIGKILL,
-        SIGSTOP,
-        SIGBUS
-    //SIGKILL and SIGSTOP cannot be caught or ignored
-    };
-
-    for(int i = 0; i < 26; i++) {
-        signal(sig_consts[i], sig_handler);
+    
+    for(int i = 0; i < N; i++) {
+        signal(i, sig_handler);
     }
 
-    
     while(1) {
         pause();
         printf("last_signal = %d (%s)\n", g_last_signal, strsignal(g_last_signal));
     }
+
     return 0;
 }
