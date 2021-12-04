@@ -19,7 +19,7 @@ int main(void) {
 
     proc_info();
 
-    int sig_consts[23] = {
+    int sig_consts[26] = {
         SIGINT, 
         SIGQUIT, 
         SIGTSTP, 
@@ -40,13 +40,16 @@ int main(void) {
         SIGVTALRM,
         SIGXCPU,
         SIGXFSZ,
+        SIGTRAP,
+        SIGUSR1,
+        SIGUSR2,
         SIGKILL,
         SIGSTOP,
         SIGBUS
     //SIGKILL and SIGSTOP cannot be caught or ignored
     };
 
-    for(int i = 0; i < 23; i++) {
+    for(int i = 0; i < 26; i++) {
         signal(sig_consts[i], sig_handler);
     }
 
