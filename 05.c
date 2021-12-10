@@ -87,8 +87,8 @@ int main(int argc, char const *argv[]) {
         return 13;
     }
 
-    //set uid, gid
-    if(fchown(fd3, sb.st_uid, sb.st_gid) == -1) {
+    //set uid, gid !только от root
+    if(fchown(fd3, getuid() == 0 ? sb.st_uid : -1, sb.st_gid) == -1) {
         perror("fchown failed");
         return 14;
     }    
