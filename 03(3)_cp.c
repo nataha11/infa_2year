@@ -23,49 +23,40 @@ int main(int argc, char const *argv[]) {
         return 2;
     }
 
-    int filetype = (sb.st_mode) & S_IFMT;
+    switch ((sb.st_mode) & S_IFMT) {
 
-    if (filetype == S_IFREG) {
-        if(copy_reg(argv, sb.st_size) < 0) {
-            perror("copy_reg");
-            return 5;
-        }
+        case S_IFREG:
+            if(copy_reg(argv, sb.st_size) < 0) {
+                perror("copy_reg");
+                return 5;
+            }
+            break;
 
-    } else if (filetype == S_IFDIR) {
-        fprintf(stderr, "Can't copy directory yet\n");
-        return 4; 
+        case S_IFDIR:
+            fprintf(stderr, "Can't copy directory yet\n");
+            return 4; 
+            break;
 
-    } else if (filetype == S_IFIFO) {
-        if(mkfifo (argv[2], sb.st_mode) == -1) {
-            perror("mkfifo failed");
-            return 5;
-        }
+        case S_IFLNK:
+            if(copy_symlink(argv, sb.st_size) < 0) {
+                perror("copy_symlink failed");
+                return 9;
+            }
+            break;
 
-    } else if (filetype == S_IFCHR) {
-        if(mknod (argv[2], 'c', sb.st_rdev) == -1) {
-            perror("mknod(character device) failed");
-            return 6;
-        }
+        case S_IFIFO:
+        case S_IFCHR:
+        case S_IFBLK:
+        case S_IFSOCK:
+            if(mknod (argv[2], sb.st_mode, sb.st_rdev) == -1) {
+                perror("mknod failed");
+                return 7;
+            }
+            break;
 
-    } else if (filetype == S_IFBLK) {
-        if(mknod (argv[2], 'b', sb.st_rdev) == -1) {
-            perror("mknod(block device) failed");
-            return 7;
-        }
-
-    } else if (filetype == S_IFSOCK) {
-        fprintf(stderr, "Can't copy sockets yet\n");
-        return 8; 
-
-    } else if (filetype == S_IFLNK) {
-        if(copy_symlink(argv, sb.st_size) < 0) {
-            perror("copy_symlink failed");
-            return 9;
-        }
-
-    } else {
-        fprintf(stderr, "Unknown filetype\n");
-        return 10;
+        default: 
+            fprintf(stderr, "Unknown filetype\n");
+            return 10;
     }
 
     return 0;
@@ -79,7 +70,7 @@ int copy_reg(char const *argv[], int bufsize) {
         return -1;
     }
 
-    int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, 0644);
     if (fd2 < 0) {
         perror("Failed to open or create dest file");
         return -2;
@@ -105,7 +96,7 @@ int copy_reg(char const *argv[], int bufsize) {
         perror("pread failed");
         return -4;
     }
-
+/////todo:  result
     if (close(fd1) < 0) {
         perror("Closing src file failed");
         return -5;
@@ -122,9 +113,9 @@ int copy_reg(char const *argv[], int bufsize) {
 int copy_symlink(char const *argv[], int bufsiz) {
 
     /* Add 1 to the link size, so that we can determine whether the buffer returned by readlink() was truncated. */
-    bufsiz += 1;
+    
 
-    char * buf = malloc(bufsiz);
+    char * buf = malloc(bufsiz + 1);
     if (buf == NULL) {
         perror("malloc failed");
         return -1;
@@ -135,6 +126,7 @@ int copy_symlink(char const *argv[], int bufsiz) {
         perror("readlink failed");
         return -2;
     }
+    buf[nbytes] = '\0';
 
     //printf("'%s' points to '%.*s'\n", argv[1], (int) nbytes, buf);
 
