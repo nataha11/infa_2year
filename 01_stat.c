@@ -1,105 +1,127 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/sysmacros.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <limits.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#define BL_SIZE 512
 
 struct filetype {
     const char * typename;
     char ctype;
 };
 
-struct filetype fill_struct(struct filetype * f, const char * typnam, char type);
-struct filetype get_file_type(int mode);
-char * access_rights(int rmode);
+#define MAKE_FILETYPE(description, c) (const struct filetype) {(description), (c)}
+struct filetype get_file_type(mode_t mode);
+
+char * read_symlink(const char * symlink_path, size_t size_hint);
+
+#define MODESTR_SIZE sizeof("?rwxrwxrwx")
+void format_mode(char * buf, mode_t mode);
 
 int main(int argc, char *argv[]) {
     
     struct stat sb;
+    const char * pathname = argv[1];
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <pathname>\n", argv[0]);
         exit(1);
     }
 
-    if (lstat(argv[1], &sb) == -1) {
+    if (lstat(pathname, &sb) == -1) {
         perror("lstat");
         exit(1);
     }
 
-    struct filetype filtyp = get_file_type(sb.st_mode);
-    char * filename;
-
-    if(filtyp.ctype == 'l') {
-        //if symlink, add " -> target" to linkname
-        char * buf = malloc(sb.st_size + 1);
-        if (buf == NULL) {
-            perror("malloc failed");
-            return -1;
-        }
-
-        ssize_t nbytes = readlink(argv[1], buf, sb.st_size);
-        if (nbytes == -1) {
-            perror("readlink failed");
-            return -2;
-        }
-        filename = malloc(sizeof(argv[1]) + sizeof(" -> ") + sizeof(buf) + 3);
-        strcat(filename, argv[1]);
-        strcat(filename, " -> ");
-        strcat(filename, buf);
-        free(buf);
-    } else
-        filename = argv[1];
-
-
-    //get rights
-    int rmode = sb.st_mode & ALLPERMS;
-    int n = sizeof("rwxrwxrwx");
-    char rights[n + 1];
-    rights[0] = filtyp.ctype;
-    for(int i = 0; i < n - 1; i++) {
-        rights[n - 1 - i] = ((rmode & (1 << i))? "xwr"[i % 3] : '-');
+    //show pathname and link target
+    if(S_ISLNK(sb.st_mode)) {
+        char * symlink_dst = read_symlink(pathname, sb.st_size);
+        printf("Symlink:\t\t%s -> %s\n", pathname, symlink_dst ? symlink_dst : "?");
+        free(symlink_dst);
+    } else {
+        printf("File:                     %s\n", pathname);
+       
     }
-    rights[n] = '\0';
 
-
-    printf("File:                     %s\n", filename);
-    printf("Size:                     %lld bytes\n", (long long) sb.st_size); 
-    printf("Blocks:                   %lld\n", (long long) sb.st_blocks);
-    printf("IO Block:                 %ld bytes\n", (long) sb.st_blksize);
-    printf("File type:                %s\n", filtyp.typename);
+    printf("Size:                     %ju bytes\n", (uintmax_t) sb.st_size); 
+    printf("Blocks:                   %ju (%ju bytes)\n", (uintmax_t) sb.st_blocks, (uintmax_t) sb.st_blocks * BL_SIZE);
+    printf("IO Block:                 %ju bytes\n", (uintmax_t) sb.st_blksize);
+    printf("File type:                %s\n", get_file_type(sb.st_mode).typename);
     printf("Device ID:                %lxh/%ldd\n", (long) sb.st_dev, (long) sb.st_dev);
-    printf("Inode:                    %ld\n", (long) sb.st_ino);
-    printf("Links:                    %ld\n", (long) sb.st_nlink);
-    printf("Access:                   (%04lo/%s)  Uid:%ld  Gid:%ld  \n", (unsigned long) sb.st_mode & ALLPERMS, rights, (long) sb.st_uid, (long) sb.st_gid);
-    printf("Access:                   %s", ctime(&sb.st_atime));
-    printf("Modified:                 %s", ctime(&sb.st_mtime));
-    printf("Change:                   %s", ctime(&sb.st_ctime));
+    printf("Inode:                    %ju\n", (uintmax_t) sb.st_ino);
+    printf("Links:                    %ju\n", (uintmax_t) sb.st_nlink);
 
+    //get filetype and permissions
+    char mode_str[MODESTR_SIZE];
+    format_mode(mode_str, sb.st_mode);
+
+    printf("Access:                   (0o%04lo/%s)  UID:%jd  GID:%jd  \n", (unsigned long) (sb.st_mode & ALLPERMS), mode_str, (intmax_t) sb.st_uid, (intmax_t) sb.st_gid);
+    printf("Access (UTC):              %s", asctime(gmtime(&sb.st_atime)));
+    printf("Modify (UTC):              %s", asctime(gmtime(&sb.st_mtime)));
+    printf("Change (UTC):              %s", asctime(gmtime(&sb.st_ctime)));
+//наносекунды, локальное смещение strftime
     exit(0);
 }
 
-struct filetype fill_struct(struct filetype * f, const char * typnam, char type) {
-    f->typename = typnam;
-    f->ctype = type;
-    return * f;
+struct filetype get_file_type(mode_t mode) {
+    switch (mode & S_IFMT) {
+        case S_IFBLK:  return MAKE_FILETYPE("block device", 'b');
+        case S_IFCHR:  return MAKE_FILETYPE("character device", 'c');
+        case S_IFDIR:  return MAKE_FILETYPE("directory", 'd');
+        case S_IFIFO:  return MAKE_FILETYPE("FIFO/pipe", 'p');
+        case S_IFLNK:  return MAKE_FILETYPE("symbolic link", 'l');
+        case S_IFREG:  return MAKE_FILETYPE("regular file", '-');
+        case S_IFSOCK: return MAKE_FILETYPE("socket", 's');
+        default:       return MAKE_FILETYPE("unknown", '?');
+    }
 }
 
-struct filetype get_file_type(int mode) {
-    struct filetype f;
-    switch (mode & S_IFMT) {
-        case S_IFBLK:  {return fill_struct(&f, "block device", 'b'); }
-        case S_IFCHR:  {return fill_struct(&f, "character device", 'c'); }
-        case S_IFDIR:  {return fill_struct(&f, "directory", 'd'); }
-        case S_IFIFO:  {return fill_struct(&f, "FIFO/pipe", 'p'); }
-        case S_IFLNK:  {return fill_struct(&f, "symbolic link", 'l'); }     
-        case S_IFREG:  {return fill_struct(&f, "regular file", '-'); }
-        case S_IFSOCK: {return fill_struct(&f, "socket", 's'); } 
-        default:       {return fill_struct(&f, "unknown", '?'); }
+char * read_symlink(const char * symlink_path, size_t size_hint) {
+        size_t buf_size = size_hint ? size_hint : PATH_MAX;
+        char * buf = malloc(buf_size + 1);// +1 for '\0'
+        if (buf == NULL) {
+            perror("malloc failed");
+            return NULL;
+        }
+
+        ssize_t nbytes = readlink(symlink_path, buf, buf_size);
+        if (nbytes == -1) {
+            perror("readlink failed");
+            return NULL;
+        }
+
+        buf[nbytes] = '\0';
+        return buf;
+}
+
+void format_mode(char * buf, mode_t mode) {
+    char * p = buf;
+
+    // fill buf with info for basic mode bits
+    *p++ = get_file_type(mode).ctype;
+    for(int i  = 8; i >= 0; i++) {
+        *p++ = ((mode & (1 << i)) ? "xwr"[i % 3] : '-');
     }
+    
+    *p = '\0';//terminate string
+
+    //fix buf chars according to SUID/SGID/sticky bits
+    //0123456789
+    //?rwxrwxrwx
+    if(mode & S_ISUID) {
+        buf[3] = 's';
+    }
+    if(mode & S_ISGID) {
+        buf[6] = 's';
+    }
+    if(mode & S_ISUID) {
+        buf[9] = S_ISDIR(mode) ? 't' : 'T';
+    }        
 }
 
 
