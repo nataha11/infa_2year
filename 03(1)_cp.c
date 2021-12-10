@@ -8,6 +8,8 @@
 #include <sys/sysmacros.h>
 
 int main(int argc, char const *argv[]) {
+    int result = 0;
+
     if (argc != 3) {
         fprintf(stderr, "Usage: %s src dest\n", argv[0]);
         return 1;
@@ -19,7 +21,7 @@ int main(int argc, char const *argv[]) {
         return 2;
     }
 
-    if (((sb.st_mode) & (S_IFMT)) != S_IFREG) {
+    if ((sb.st_mode & S_IFMT) != S_IFREG) {
         perror("Not a regular file");
         return 3;
     }
@@ -29,36 +31,35 @@ int main(int argc, char const *argv[]) {
         perror("Failed to open src file");
         return 4;
     }
-
-    int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    //0644 - r/w for user, read-only for group and others
+    int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, 0644);
     if (fd2 < 0) {
         perror("Failed to open or create dest file");
+        close(fd1);
         return 5;
     }
 
-    char buf[sb.st_size]; 
+    char buf[sb.st_size];//файл может не влезть, копировать в цикле блоками (чтение + цикл записи writeall)
 
     if (read(fd1, &buf, sb.st_size) == -1) {
         perror("Failed to read src file");
         return 6;
     }
 
-    if (dprintf(fd2, "%s", buf) != sb.st_size) {
+    if (dprintf(fd2, "%s", buf) != sb.st_size) {/////////////
         perror ("dprintf failed");
-        close(fd1);       
-        close(fd2);
-        return 7;
+        result = 7;
     }
 
     if (close(fd1) < 0) {
         perror("Closing src file failed");
-        return 8;
+        result = 8;
     }
 
     if (close(fd2) < 0) {
         perror("Closing dest file failed");
-        return 9;
+        result = 9;
     }
 
-    return 0;
+    return result;
 }
