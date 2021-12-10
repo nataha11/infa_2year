@@ -16,8 +16,9 @@ int main(int argc, char *argv[]) {
         return 2;
     }   
 
-    if (dprintf(fd,"%s", argv[2]) != (int)strlen(argv[2])) {
+    if (dprintf(fd, "%s", argv[2]) != (int)strlen(argv[2])) {
         perror("dprintf failed");
+        close(fd);////////////////////////////////////////////////
         return 3;
     }
 
