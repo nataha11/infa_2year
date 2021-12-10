@@ -68,7 +68,7 @@ int main(int argc, char const *argv[]) {
         return 10;
     }
 
-    int fd3 = open(argv[2], O_RDWR);
+    int fd3 = open(argv[2], O_RDWR | O_CREAT | O_TRUNC, 0600);
     if (fd3 < 0) {
         perror("Failed to open copied file");
         return 11;
@@ -81,8 +81,7 @@ int main(int argc, char const *argv[]) {
     }
 
     //set timestamps
-    struct timespec array_time[2] = {sb.st_atim, sb.st_mtim};
-    if(futimens(fd3, array_time) == -1) {
+    if(futimens(fd3, (const struct timespec[]){sb.st_atim, sb.st_mtim}) == -1) {
         perror("futimens failed");
         return 13;
     }
@@ -99,13 +98,13 @@ int copy_reg(char const *argv[], int bufsize) {
 
     int fd1 = open (argv[1], O_RDONLY);
     if (fd1 < 0) {
-        //perror("Failed to open src file");
+        perror("Failed to open src file");
         return -1;
     }
 
     int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd2 < 0) {
-        //perror("Failed to open or create dest file");
+        perror("Failed to open or create dest file");
         return -2;
     }    
 
@@ -118,25 +117,26 @@ int copy_reg(char const *argv[], int bufsize) {
         while (nbytes) {
             nbytes_w = pwrite(fd2, buf, nbytes, offset_w);
             if (nbytes_w == -1) {
-                //perror("pwrite failed");
+                perror("pwrite failed");
                 return -3;
             }
             nbytes -= nbytes_w;
             offset_w += nbytes_w;
         }
     }
+///todo: closing result    
     if (nbytes == -1) {
-        //perror("pread failed");
+        perror("pread failed");
         return -4;
     }
 
     if (close(fd1) < 0) {
-        //perror("Closing src file failed");
+        perror("Closing src file failed");
         return -5;
     }
 
     if (close(fd2) < 0) {
-        //perror("Closing dest file failed");
+        perror("Closing dest file failed");
         return -6;
     }
     return 0;
