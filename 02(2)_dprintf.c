@@ -5,12 +5,15 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
+
+    int result = 0;
+
     if (argc != 3) {
         printf("Usage: %s filename string\n", argv[0]);
         return 1;
     }   
-
-    int fd = open(argv[1], O_RDWR|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+    //0644 - r/w for user, read-only for group and others
+    int fd = open(argv[1], O_RDWR|O_CREAT|O_APPEND, 0644);
     if (fd < 0) {
         perror("File can't be opened or created");
         return 2;
@@ -18,14 +21,13 @@ int main(int argc, char *argv[]) {
 
     if (dprintf(fd, "%s", argv[2]) != (int)strlen(argv[2])) {
         perror("dprintf failed");
-        close(fd);////////////////////////////////////////////////
-        return 3;
+        result = 3;
     }
 
     if (close(fd) == -1) {
         perror("Failed to close");
-        return 4;
+        result = 4;
     }
 
-    return 0;
+    return result;
 } 
