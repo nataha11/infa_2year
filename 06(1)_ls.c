@@ -1,23 +1,8 @@
-#define _DEFAULT_SOURCE
-#include <sys/types.h>
-#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-
-
-char dtype_letter(unsigned d_type) {
-    switch(d_type) {
-        case DT_BLK :  return 'b';
-        case DT_CHR :  return 'c';
-        case DT_DIR :  return 'd';
-        case DT_FIFO : return 'p';
-        case DT_LNK :  return 'l';
-        case DT_REG :  return '-';
-        case DT_SOCK : return 's';
-        default :      return '?';
-    }
-}
+#include <sys/types.h>
+#include <dirent.h>
 
 char stattype(unsigned mode) {
     switch (mode & S_IFMT) {
@@ -41,33 +26,28 @@ int main(int argc, char const *argv[]) {
     }
 
     DIR * dir_fd = opendir(".");
-
     if (dir_fd == NULL) {
-        perror("opendir failed");
+        perror("opendir");
         return 2;
     }
 
     struct dirent * entry;
-	while((entry = readdir(dir_fd)) != NULL) {
-        char type = dtype_letter(entry->d_type);
-        if (type == '?') {
-			struct stat sb;
-			if(lstat(entry->d_name, &sb) == -1) {
-                perror ("lstat failed");
-                return 3;
-
-            } else {
-                type = stattype(sb.st_mode);
-            }
-		}
-		printf("%c %s\n", type, entry->d_name);		
-	}
+    while((entry = readdir(dir_fd)) != NULL) {
+        struct stat sb;
+        if(lstat(entry->d_name, &sb) == -1) {
+            perror ("lstat");
+            closedir(dir_fd);
+            return 3;
+        }
+        char type = stattype(sb.st_mode); 
+        printf("%c %s\n", type, entry->d_name);     
+    }
 
     if(closedir(dir_fd) == -1) {
-        perror("closedir failed");
+        perror("closedir");
         return 4;
     }
 
-	return 0;
+    return 0;
 }
 

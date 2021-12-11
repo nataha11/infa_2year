@@ -9,20 +9,6 @@
 #include <time.h>
 #include <errno.h>
 
-
-/*char dtype_letter(unsigned d_type) {
-    switch(d_type) {
-        case DT_BLK :  return 'b';
-        case DT_CHR :  return 'c';
-        case DT_DIR :  return 'd';
-        case DT_FIFO : return 'p';
-        case DT_LNK :  return 'l';
-        case DT_REG :  return '-';
-        case DT_SOCK : return 's';
-        default :      return '?';
-    }
-}*/
-
 char stattype(unsigned mode) {
     switch (mode & S_IFMT) {
         case S_IFBLK:  return 'b';
@@ -52,39 +38,32 @@ int main(int argc, char const *argv[]) {
         }
     } 
     dir_fd = opendir(".");
-
     if (dir_fd == NULL) {     
-        perror("opendir failed");
+        perror("opendir");
         return 2;
     }
 
     struct dirent * entry;
     while((entry = readdir(dir_fd)) != NULL) {
-            struct stat sb;
-            if(lstat(entry->d_name, &sb) == -1) {//pathname
-                printf("entry->d_name = %s\n", entry->d_name);
-                perror ("lstat failed");
-                return 3;
+        struct stat sb;
+        if(lstat(entry->d_name, &sb) == -1) {
+            perror ("lstat");
+            printf("failed: entry->d_name = %s\n", entry->d_name);
+            closedir(dir_fd);
+            return 3;
 
-            }
-            //get rights
-            int rmode = sb.st_mode & ALLPERMS;
-            int n = sizeof("rwxrwxrwx");
-            char rights[n + 1];
-            rights[0] = stattype(sb.st_mode);
-            for(int i = 0; i < n - 1; i++) {
-                rights[n - 1 - i] = ((rmode & (1 << i))? "xwr"[i % 3] : '-');
-            }
-            rights[n] = '\0';
-                 
-            
-            printf("%s %s\n", rights, entry->d_name);		
+        }                 
+        char type = stattype(sb.st_mode); 
+        printf("%c %s\n", type, entry->d_name);	
     }
 
     if(closedir(dir_fd) == -1) {
-        perror("closedir failed");
+        perror("closedir");
         return 4;
     }    	
 	return 0;
 }
+
+
+
 
