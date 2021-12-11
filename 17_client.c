@@ -8,7 +8,7 @@
 int main(int argc, char const *argv[]) {
 
     if(argc != 3) {
-        printf("Usage: path queue_fd message\n");
+        printf("Usage: path /queue_name message\n");
         return 1;
     }
 
@@ -23,7 +23,7 @@ int main(int argc, char const *argv[]) {
 
     //send test message
     if(mq_send(queue_fd, argv[2], strlen(argv[2]), 0) < 0) {
-        perror("failed to send another message");
+        perror("failed to send message");
         result = 1;
     }
 
