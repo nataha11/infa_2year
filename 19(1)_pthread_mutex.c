@@ -9,7 +9,7 @@
 
 typedef struct {
     pthread_mutex_t mutex;
-    unsigned long long counter;
+    volatile unsigned long long counter;
     int iterations;
 } work_area_t;
 
@@ -38,7 +38,7 @@ int main(int argc, char * argv[]) {
         perror("pthread_create");
         return 1;
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < data.iterations; i++) {
         pthread_mutex_lock(&data.mutex);
         data.counter++;
         pthread_mutex_unlock(&data.mutex);
