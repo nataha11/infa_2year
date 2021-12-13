@@ -16,10 +16,10 @@ int main(int argc, char const *argv[]) {
         return 2;
     }
     printf("Block size: %lu\n", stf.f_bsize);
-    printf("Total data blocks in filesystem: %lu\n", stf.f_blocks);
-    printf("Number of free blocks: %lu\n", stf.f_bfree);
-    printf("Number of free blocks for unprivileged users: %lu\n", stf.f_bavail);
-    printf("Number of free blocks used: %lu\n", stf.f_blocks - stf.f_bfree);
+    printf("Total (bytes): %lu\n", stf.f_blocks * (unsigned int)stf.f_bsize);
+    printf("Free (bytes): %lu\n", stf.f_bfree * (unsigned int)stf.f_bsize);
+    printf("Free for unprivileged users (bytes): %lu\n", stf.f_bavail * (unsigned int)stf.f_bsize);
+    printf("Used (bytes): %lu\n", (stf.f_blocks - stf.f_bfree) * (unsigned int)stf.f_bsize);
 
     return 0;
 }
