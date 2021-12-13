@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <sys/statfs.h>
+#include <sys/statvfs.h>
 #include <sys/types.h>
 
 int main(int argc, char const *argv[]) {
@@ -9,17 +9,17 @@ int main(int argc, char const *argv[]) {
         return 1;
     }
 
-    struct statfs stf;
+    struct statvfs sv;
 
-    if(statfs(argv[1], &stf) == -1) {
-        perror("statfs");
+    if(statvfs(argv[1], &sv) == -1) {
+        perror("statvfs");
         return 2;
     }
-    printf("Block size: %lu\n", stf.f_bsize);
-    printf("Total (bytes): %lu\n", stf.f_blocks * (unsigned int)stf.f_bsize);
-    printf("Free (bytes): %lu\n", stf.f_bfree * (unsigned int)stf.f_bsize);
-    printf("Free for unprivileged users (bytes): %lu\n", stf.f_bavail * (unsigned int)stf.f_bsize);
-    printf("Used (bytes): %lu\n", (stf.f_blocks - stf.f_bfree) * (unsigned int)stf.f_bsize);
+    printf("Block size: %lu\n", sv.f_bsize);
+    printf("Total (bytes): %lu\n", sv.f_blocks * (unsigned int)sv.f_frsize);
+    printf("Free (bytes): %lu\n", sv.f_bfree * (unsigned int)sv.f_bsize);
+    printf("Free for unprivileged users (bytes): %lu\n", sv.f_bavail * (unsigned int)sv.f_bsize);
+    printf("Used (bytes): %lu\n", (sv.f_blocks - sv.f_bfree) * (unsigned int)sv.f_bsize);
 
     return 0;
 }
