@@ -17,6 +17,7 @@ int main(void) {
     }
     //this code is executed in child process only
     if (child_id == 0) {
+        //что делает этот код
         if (dup2(fileno(stderr), fileno(stdout)) < 0) {
             perror("dup2");
         }

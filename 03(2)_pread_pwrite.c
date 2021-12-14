@@ -23,7 +23,7 @@ int main(int argc, char const *argv[]) {
         return 2;
     }
 
-    if (((sb.st_mode) & (S_IFMT)) != S_IFREG) {
+    if ((sb.st_mode & S_IFMT) != S_IFREG) {
         perror("Not a regular file");
         return 3;
     }
@@ -49,6 +49,8 @@ int main(int argc, char const *argv[]) {
         while (nbytes) {
             nbytes_w = pwrite(fd2, buf, nbytes, offset_w);
             if (nbytes_w == -1) {
+                close(fd1);
+                close(fd2);
                 perror("pwrite failed");
                 return 6;
             }
@@ -59,7 +61,7 @@ int main(int argc, char const *argv[]) {
 
     if (nbytes == -1) {
         perror("pread failed");
-        return 7;
+        result = 7;
     }
 
     if (close(fd1) < 0) {

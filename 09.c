@@ -15,11 +15,11 @@ int main(int argc, char const *argv[]) {
         perror("statvfs");
         return 2;
     }
-    printf("Block size: %lu\n", sv.f_bsize);
+
     printf("Total (bytes): %lu\n", sv.f_blocks * (unsigned int)sv.f_frsize);
-    printf("Free (bytes): %lu\n", sv.f_bfree * (unsigned int)sv.f_bsize);
-    printf("Free for unprivileged users (bytes): %lu\n", sv.f_bavail * (unsigned int)sv.f_bsize);
-    printf("Used (bytes): %lu\n", (sv.f_blocks - sv.f_bfree) * (unsigned int)sv.f_bsize);
+    printf("Free (bytes): %lu\n", sv.f_bfree * (unsigned int)sv.f_frsize);
+    printf("Free for unprivileged users (bytes): %lu\n", sv.f_bavail * (unsigned int)sv.f_frsize);
+    printf("Used (bytes): %lu\n", (sv.f_blocks - sv.f_bfree) * (unsigned int)sv.f_frsize);
 
     return 0;
 }

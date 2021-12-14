@@ -3,6 +3,7 @@ cd /mnt/c/infa/infa_2year/
 
 gcc -Werror -Wall -Wextra -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wlogical-op -Wreturn-type -g -O2 -fwhole-program 01_stat.c
 
+find . -name '*.txt' -print0 |xargs -0 dos2unix
 
 advanced linux programming -- книжка с разобранными задачами
 
@@ -89,9 +90,10 @@ getdents(64) считывает в массив байтов структур п
 filefrag (hdparm --fibmap)
 дефрагментация
 
-9. вывести занятое, свободное и доступное (для использования) пространство для 
+&9. вывести занятое, свободное и доступное (для использования) пространство для 
 файловой системы, в которой лежит указанный файл или каталог
 statfs(linux specific) / statvfs
+df чекнуть источник, на что умножать размер блока\фрагмента
 
 9*. разным uid разное место
 quota/quotactl

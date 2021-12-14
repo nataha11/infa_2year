@@ -1,8 +1,9 @@
 import socket
 import sys
 import select
+#udp client
 
-SVR_ADDR = ("172.27.185.221", 65535)
+SVR_ADDR = ("172.27.187.142", 65535)
 
 def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)

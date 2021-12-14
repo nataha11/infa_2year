@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
     //show pathname and link target
     if(S_ISLNK(sb.st_mode)) {
-        char * symlink_dst = read_symlink(pathname, sb.st_size);
+        char * symlink_dst = read_symlink(pathname, (size_t)sb.st_size);
         printf("Symlink:\t\t%s -> %s\n", pathname, symlink_dst ? symlink_dst : "?");
         free(symlink_dst);
     } else {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     char mode_str[MODESTR_SIZE];
     format_mode(mode_str, sb.st_mode);
 
-    printf("Access:                   (0o%04lo/%s)  UID:%jd  GID:%jd  \n", (unsigned long) (sb.st_mode & ALLPERMS), mode_str, (intmax_t) sb.st_uid, (intmax_t) sb.st_gid);
+    printf("Access:                   (%04lo/%s)  UID:%jd  GID:%jd  \n", (unsigned long) (sb.st_mode & ALLPERMS), mode_str, (intmax_t) sb.st_uid, (intmax_t) sb.st_gid);
     printf("Access (UTC):              %s", asctime(gmtime(&sb.st_atime)));
     printf("Modify (UTC):              %s", asctime(gmtime(&sb.st_mtime)));
     printf("Change (UTC):              %s", asctime(gmtime(&sb.st_ctime)));
@@ -104,8 +104,8 @@ void format_mode(char * buf, mode_t mode) {
 
     // fill buf with info for basic mode bits
     *p++ = get_file_type(mode).ctype;
-    for(int i  = 8; i >= 0; i++) {
-        *p++ = ((mode & (1 << i)) ? "xwr"[i % 3] : '-');
+    for(int i = 8; i >= 0; i--) {
+        *p++ = (((int)mode & (1 << i)) ? "xwr"[i % 3] : '-');
     }
     
     *p = '\0';//terminate string

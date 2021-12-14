@@ -3,14 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+//нельзя так
 #define N 65
 
 volatile int g_last_signal;
 
 void proc_info(void) {
-    printf("PID %d, PPID %d, UID %d, GID %d, PGID %d, SID %d\n", getpid(), getppid(), getuid(), getgid(), getpgrp(), getsid(0));
-    printf("EUID %d, EGID %d\n", geteuid(), getegid());
+    printf("PID %d, PPID %d, PGID %d, SID %d, UID %d, GID %d\n", getpid(), getppid(), getpgrp(), getsid(0), getuid(), getgid());
 }
 
 void sig_handler(int signum) {
@@ -22,7 +21,7 @@ int main(void) {
     proc_info();
     
     for(int i = 0; i < N; i++) {
-        signal(i, sig_handler);
+        signal(i, sig_handler);//sigaction, signal старый
     }
 
     while(1) {

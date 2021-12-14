@@ -1,6 +1,7 @@
 #tcp server
 import socket
 import select
+#это не работает
 
 def main():
     srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -42,7 +43,7 @@ def main():
                                 continue
                             (other_client_addr, _, other_client_fobj) = clients[other_client_fd]
                             print('\tForwarding to ', other_client_addr)
-                            other_client_fobj.write(line)#ВЫЗЫВАЕТ send только если ??
+                            other_client_fobj.write(line)#ВЫЗЫВАЕТ send только если буфер заполнился
                             other_client_fobj.flush() #отправить все что набуферизовалось. не ждать, когда что то еще придет
                         # Successfully forwarded to all other clients, handle newt event
                         continue
