@@ -15,6 +15,9 @@ int main(int argc, char const *argv[]) {
         perror("statvfs");
         return 2;
     }
+    //f_frsize  -- the size in bytes of the minimum unit of allocation on this file system. (f_bsize in struct statfs.)
+    //f_bsize -- the preferred length of I/O requests for files on this file system. (f_iosize in struct statfs.)
+    //On linux, f_frsize is rarely (if ever) different than f_bsize.
 
     printf("Total (bytes): %lu\n", sv.f_blocks * (unsigned int)sv.f_frsize);
     printf("Free (bytes): %lu\n", sv.f_bfree * (unsigned int)sv.f_frsize);
