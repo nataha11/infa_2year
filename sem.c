@@ -1,7 +1,7 @@
 ///////////////////Черновик//////////////////
 cd /mnt/c/infa/infa_2year/
 
-gcc -Werror -Wall -Wextra -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wlogical-op -Wreturn-type -g -O2 -fwhole-program 01_stat.c
+gcc -Werror -Wall -Wextra -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wlogical-op -Wreturn-type -g -O2 -fwhole-program pathname.c
 
 find . -name '*.txt' -print0 |xargs -0 dos2unix
 
