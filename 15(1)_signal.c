@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//нельзя так
+
 #define N 65
 
 volatile int g_last_signal;
@@ -21,7 +21,10 @@ int main(void) {
     proc_info();
     
     for(int i = 0; i < N; i++) {
-        signal(i, sig_handler);//sigaction, signal старый
+        struct sigaction sig_act;
+        memset(&sig_act, 0, sizeof(sig_act));
+        sig_act.sa_handler = sig_handler;
+        sigaction(i, &sig_act, NULL);
     }
 
     while(1) {
