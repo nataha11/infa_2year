@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/statvfs.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 int main(int argc, char const *argv[]) {
 
@@ -19,10 +20,10 @@ int main(int argc, char const *argv[]) {
     //f_bsize -- the preferred length of I/O requests for files on this file system. (f_iosize in struct statfs.)
     //On linux, f_frsize is rarely (if ever) different than f_bsize.
 
-    printf("Total (bytes): %lu\n", sv.f_blocks * (unsigned int)sv.f_frsize);
-    printf("Free (bytes): %lu\n", sv.f_bfree * (unsigned int)sv.f_frsize);
-    printf("Free for unprivileged users (bytes): %lu\n", sv.f_bavail * (unsigned int)sv.f_frsize);
-    printf("Used (bytes): %lu\n", (sv.f_blocks - sv.f_bfree) * (unsigned int)sv.f_frsize);
+    printf("Total (bytes): %lu\n", sv.f_blocks * (uintmax_t)sv.f_frsize);
+    printf("Free (bytes): %lu\n", sv.f_bfree * (uintmax_t)sv.f_frsize);
+    printf("Free for unprivileged users (bytes): %lu\n", sv.f_bavail * (uintmax_t)sv.f_frsize);
+    printf("Used (bytes): %lu\n", (sv.f_blocks - sv.f_bfree) * (uintmax_t)sv.f_frsize);
 
     return 0;
 }
