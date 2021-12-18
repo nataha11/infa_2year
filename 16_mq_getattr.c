@@ -51,7 +51,6 @@ int main(void) {
         perror("mq_close");
         result = 3;
     }
-    //Cleanup
     if(mq_unlink(queue_name) == -1) {
         perror("mq_unlink");
         result = 4;
