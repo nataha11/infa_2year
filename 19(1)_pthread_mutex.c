@@ -26,6 +26,7 @@ void * thr_body(void * arg) {
 }
 
 int main(int argc, char * argv[]) {
+  
     work_area_t data = {
         .mutex = PTHREAD_MUTEX_INITIALIZER,
         .counter = 0,
@@ -33,7 +34,7 @@ int main(int argc, char * argv[]) {
     };
 
     pthread_t secondary_thread_id;
-    if(0 != pthread_create(&secondary_thread_id, NULL, thr_body, &data)) { //pthread_create returns 0 on success
+    if((errno = pthread_create(&secondary_thread_id, NULL, thr_body, &data)) != 0) { //pthread_create returns 0 on success
         perror("pthread_create");
         return 1;
     }
