@@ -15,13 +15,12 @@ struct linux_dirent64 {
     char           d_name[]; /* Filename (null-terminated) */
 };
 
-#define BUF_SIZE    1024
+#define BUF_SIZE 1024
 
 #define handle_error(msg)\
         do{ perror(msg); exit(1); } while(0)
 
 const char * str_dtype(unsigned char type) {
-
     switch(type) {
         case DT_REG: return "regular";
         case DT_DIR: return "directory";
@@ -35,6 +34,11 @@ const char * str_dtype(unsigned char type) {
 }
 
 int main(int argc, char const *argv[]) {
+    
+    if (argc > 2) {
+        fprintf(stderr, "Usage: %s [directory]\n", argv[0]);
+        return 1;
+    }    
 
     int fd = open(argc > 1 ? argv[1] : ".", O_RDONLY | O_DIRECTORY);
 
@@ -62,8 +66,7 @@ int main(int argc, char const *argv[]) {
             struct linux_dirent64 * d = (struct linux_dirent64*)(buf + bpos);
             printf("%8lu \t", d->d_ino);
 
-            char d_type = *(buf + bpos + d->d_reclen - 1);
-            printf("%-8s\t", str_dtype(d_type));//On kernels up to and including  2.6.3,  attempting  to  access this field always provides the value 0 (DT_UNKNOWN) -- default in str_type.
+            printf("%-8s\t", str_dtype(d->d_type));
 
             printf("%d %6lld \t%s\n", d->d_reclen, (long long)d->d_off, d->d_name);
 
