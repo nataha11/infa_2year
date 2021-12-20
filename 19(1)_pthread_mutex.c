@@ -18,10 +18,9 @@ void * thr_body(void * arg) {
     for (int i = 0; i < w->iterations; i++) {
         pthread_mutex_lock(&w->mutex);
         w->counter++;
+        printf("counter(2) = %llu\n", w->counter);
         pthread_mutex_unlock(&w->mutex); 
-
-    }  
- 
+    }
     puts("Done (secondary)");
     return NULL;
 }
@@ -34,13 +33,14 @@ int main(int argc, char * argv[]) {
     };
 
     pthread_t secondary_thread_id;
-    if(errno = pthread_create(&secondary_thread_id, NULL, thr_body, &data)) { //pthread_create returns error code
+    if(0 != pthread_create(&secondary_thread_id, NULL, thr_body, &data)) { //pthread_create returns 0 on success
         perror("pthread_create");
         return 1;
     }
     for (int i = 0; i < data.iterations; i++) {
         pthread_mutex_lock(&data.mutex);
         data.counter++;
+        printf("counter(1) = %llu\n", data.counter);
         pthread_mutex_unlock(&data.mutex);
     }
     puts("Done (main)");
