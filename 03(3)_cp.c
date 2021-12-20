@@ -7,8 +7,8 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
-int copy_reg(char const *argv[], int bufsize);
-int copy_symlink(char const *argv[], int bufsiz);
+int copy_reg(char const *argv[], long int bufsize);
+int copy_symlink(char const *argv[], long int bufsiz);
 
 int main(int argc, char const *argv[]) {
 
@@ -28,7 +28,7 @@ int main(int argc, char const *argv[]) {
         case S_IFREG:
             if(copy_reg(argv, sb.st_size) < 0) {
                 perror("copy_reg");
-                return 5;
+                return 3;
             }
             break;
 
@@ -40,7 +40,7 @@ int main(int argc, char const *argv[]) {
         case S_IFLNK:
             if(copy_symlink(argv, sb.st_size) < 0) {
                 perror("copy_symlink failed");
-                return 9;
+                return 5;
             }
             break;
 
@@ -50,19 +50,20 @@ int main(int argc, char const *argv[]) {
         case S_IFSOCK:
             if(mknod (argv[2], sb.st_mode, sb.st_rdev) == -1) {
                 perror("mknod failed");
-                return 7;
+                return 6;
             }
             break;
 
         default: 
-            fprintf(stderr, "Unknown filetype\n");
-            return 10;
+            fprintf(stderr, "Unknown filetype, file can't be copied\n");
+            return 7;
     }
-
     return 0;
 }
 
-int copy_reg(char const *argv[], int bufsize) {
+int copy_reg(char const *argv[], long int bufsize) {
+    
+    int result = 0;
 
     int fd1 = open (argv[1], O_RDONLY);
     if (fd1 < 0) {
@@ -73,20 +74,22 @@ int copy_reg(char const *argv[], int bufsize) {
     int fd2 = open (argv[2], O_RDWR | O_CREAT | O_TRUNC, 0644);
     if (fd2 < 0) {
         perror("Failed to open or create dest file");
+        close(fd1);
         return -2;
     }    
 
     char buf[bufsize]; 
-    ssize_t nbytes, nbytes_w;    
+    ssize_t nbytes, nbytes_w;
 
     off_t offset_r = 0, offset_w = 0;
-    while ((nbytes = pread(fd1, buf, bufsize, offset_r)) > 0) {
+    while ((nbytes = pread(fd1, buf, (long unsigned)bufsize, offset_r)) > 0) {
         offset_r += nbytes;
         while (nbytes) {
-            nbytes_w = pwrite(fd2, buf, nbytes, offset_w);
+            nbytes_w = pwrite(fd2, buf, (long unsigned)nbytes, offset_w);
             if (nbytes_w == -1) {
                 perror("pwrite failed");
-                return -3;
+                result = -3;
+                break;
             }
             nbytes -= nbytes_w;
             offset_w += nbytes_w;
@@ -94,48 +97,36 @@ int copy_reg(char const *argv[], int bufsize) {
     }
     if (nbytes == -1) {
         perror("pread failed");
-        return -4;
+        result = -4;
     }
-/////todo:  result
+
     if (close(fd1) < 0) {
         perror("Closing src file failed");
-        return -5;
+        result = -5;
     }
 
     if (close(fd2) < 0) {
         perror("Closing dest file failed");
-        return -6;
+        result = -6;
     }
     
-    return 0;
+    return result;
 }
 
-int copy_symlink(char const *argv[], int bufsiz) {
-
-    /* Add 1 to the link size, so that we can determine whether the buffer returned by readlink() was truncated. */
+int copy_symlink(char const *argv[], long int bufsiz) {
     
-
-    char * buf = malloc(bufsiz + 1);
+    char * buf = malloc((long unsigned)bufsiz + 1);
     if (buf == NULL) {
         perror("malloc failed");
         return -1;
     }
 
-    ssize_t nbytes = readlink(argv[1], buf, bufsiz);
+    ssize_t nbytes = readlink(argv[1], buf, (long unsigned)bufsiz);
     if (nbytes == -1) {
         perror("readlink failed");
         return -2;
     }
     buf[nbytes] = '\0';
-
-    //printf("'%s' points to '%.*s'\n", argv[1], (int) nbytes, buf);
-
-    /* If the return value was equal to the buffer size, then the link target was larger than expected 
-    (perhaps because the target was changed between the call to lstat() and the call to readlink()). 
-    Warn the user that the returned target may have been truncated. */
-
-    if (nbytes == bufsiz)
-       printf("(Returned buffer may have been truncated)\n");
 
     if(symlink(buf, argv[2]) == -1) {
         perror("symlink falied");
@@ -145,16 +136,5 @@ int copy_symlink(char const *argv[], int bufsiz) {
     free(buf);
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
