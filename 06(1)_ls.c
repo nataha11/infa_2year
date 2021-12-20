@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <errno.h>
 
 char dtype_letter(unsigned d_type) {
     switch(d_type) {
@@ -31,6 +32,7 @@ char stattype(unsigned mode) {
 }
 
 int main(int argc, char const *argv[]) {
+    int result = 0;
 
     if(argc > 1) {
         printf("Too many arguments\n");
@@ -43,7 +45,8 @@ int main(int argc, char const *argv[]) {
         perror("opendir");
         return 2;
     }
-
+    
+    errno = 0;
     struct dirent * entry;
     while((entry = readdir(dir_fd)) != NULL) {
         char type = dtype_letter(entry->d_type);
@@ -51,21 +54,25 @@ int main(int argc, char const *argv[]) {
             struct stat sb;
             if(lstat(entry->d_name, &sb) == -1) {
                 perror ("lstat failed");
-                closedir(dir_fd);
-                return 3;
+                result = 3;
+                continue;
             } else {
                 type = stattype(sb.st_mode);
             }
         }
         printf("%c %s\n", type, entry->d_name);     
     }
-
+    
+    if(errno != 0) {
+        perror("readdir");
+        result = 4;
+    }
 
     if(closedir(dir_fd) == -1) {
         perror("closedir");
-        return 4;
+        result = 5;
     }
 
-    return 0;
+    return result;
 }
 
