@@ -8,13 +8,15 @@
 
 #define BUFSIZE 4096
 
-static void handle_events(int fd, const char * path) {
+static void handle_events(int fd) {
 
    char buf[BUFSIZE];
+   uint32_t buiscuit = 0;
    
     /* Loop while events can be read from inotify file descriptor. */
     for (;;) {
         errno = 0;
+        
         // Read some events.
         ssize_t len = read(fd, buf, sizeof(buf));
         if (len == -1 && errno != EAGAIN) {
@@ -29,21 +31,31 @@ static void handle_events(int fd, const char * path) {
 
         /* Loop over all events in the buffer */
         const struct inotify_event * event;
-        for (char * ptr = buf; ptr < buf + len;
-                ptr += sizeof(struct inotify_event) + event->len) {
+        for (char * ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 
             event = (const struct inotify_event *)ptr;
-
-            /* Print what was created */ 
-            if (event->mask & IN_CREATE)
-                printf("Created: %s/%s", path, event->len ? event->name : "");
-           
-            if (event->mask & IN_ISDIR) {
-                printf("[directory]\n");
+            // Print what was created  
+            if (event->mask & IN_CREATE) {
+                printf("Created: %s", event->name);
+            } else if (event->mask & IN_MOVED_FROM) { //first IN_MOVED_FROM
+                buiscuit = event->cookie;
+                printf("Renamed from: %s", event->name);
+            } else if (event->mask & IN_MOVED_TO) {// then IN_MOVED_TO
+                if (buiscuit == event->cookie) {//join the structures by cookies
+                    printf("Renamed to: %s", event->name);
+                }                
             } else {
-                printf("[file]\n");
-            }           
+                printf("Event not implemented yet\n");
+                continue;
+            }
+            //Print type
+            if (event->mask & IN_ISDIR)
+                printf(" [directory]\n");
+            else
+                printf(" [file]\n");
+                  
         }
+        
     }
 }
 
@@ -101,7 +113,7 @@ int main(int argc, const char *argv[]) {
             }
             if (fds[1].revents & POLLIN) {
                 /* Inotify events are available */
-                handle_events(fd, argv[1]);
+                handle_events(fd);
             }
         }
     }
