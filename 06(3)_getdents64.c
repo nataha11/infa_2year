@@ -20,7 +20,7 @@ struct linux_dirent64 {
 #define handle_error(msg)\
         do{ perror(msg); exit(1); } while(0)
 
-const char * str_dtype(char type) {
+const char * str_dtype(unsigned char type) {
 
     switch(type) {
         case DT_REG: return "regular";
@@ -63,7 +63,7 @@ int main(int argc, char const *argv[]) {
             printf("%8lu \t", d->d_ino);
 
             char d_type = *(buf + bpos + d->d_reclen - 1);
-            printf("%-8s(%c)\t", str_dtype(d_type), d_type);
+            printf("%-8s\t", str_dtype(d_type));//On kernels up to and including  2.6.3,  attempting  to  access this field always provides the value 0 (DT_UNKNOWN) -- default in str_type.
 
             printf("%d %6lld \t%s\n", d->d_reclen, (long long)d->d_off, d->d_name);
 
