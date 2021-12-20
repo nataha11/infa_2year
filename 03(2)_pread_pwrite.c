@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
-#define BUF_SIZE (1024*1024)   //  1 протестировать
+#define BUF_SIZE 1024 * 1024
 
 int main(int argc, char const *argv[]) {
     int result = 0;
@@ -47,7 +47,7 @@ int main(int argc, char const *argv[]) {
     while ((nbytes = pread(fd1, buf, BUF_SIZE, offset_r)) > 0) {
         offset_r += nbytes;
         while (nbytes) {
-            nbytes_w = pwrite(fd2, buf, nbytes, offset_w);
+            nbytes_w = pwrite(fd2, buf, (long unsigned)nbytes, offset_w);
             if (nbytes_w == -1) {
                 close(fd1);
                 close(fd2);
