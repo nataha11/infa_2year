@@ -17,7 +17,10 @@ int main(void) {
     proc_info();
     
     sigset_t mask;
-    sigfillset(&mask);//add all signals
+    if(sigfillset(&mask) == -1) {//add all signals
+        perror("sigfillset");
+        return 1;
+    }
 
     if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
        perror("sigprocmask");
