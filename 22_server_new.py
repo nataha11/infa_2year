@@ -1,17 +1,16 @@
 #tcp server
 import socket
 import select
-#это не работает
 
 def main():
     srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    srv_sock.bind(('', 7654))
+    srv_sock.bind(('', 7655))
     srv_sock.listen(10)#очередь и ее размер
     #create poll object for handling multiple sockets
     poll_obj = select.poll()
     poll_obj.register(srv_sock, select.POLLIN)
     #create dict for clients: fd -> (addr, socket, fobj)
-    client = {}
+    clients = {}
     try:
         while True:
             for fd, event in poll_obj.poll():
@@ -20,10 +19,10 @@ def main():
                     client_sock, client_addr = srv_sock.accept()
                     print('Connected from: ', client_addr)
                     # Wrap socket with a file-like object:
-                    clien_fobj = client_sock.makefile('rw', encoding = 'utf-8')
+                    client_fobj = client_sock.makefile('rw', encoding = 'utf-8')
                     # Add this client to dict and poll_obj for further handlings:
-                    alients[client_sock,fileno()] = (client_addr, client_sock, client_fobj)
-                    poll.obj.register(client_sock, select.POLLIN)
+                    clients[client_sock.fileno()] = (client_addr, client_sock, client_fobj)
+                    poll_obj.register(client_sock, select.POLLIN)
                     continue
                 # New data from some client:
                 print('Client event: ', fd, event)

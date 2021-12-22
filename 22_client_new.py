@@ -1,9 +1,11 @@
+#tcp client
 import socket
 import sys
 import select
 
 #SRV_ADDR = ('81.5.88.117', 7500)
-SRV_ADDR = ('178.176.75.79', 7654)
+#SRV_ADDR = ('178.176.75.79', 7654)
+SRV_ADDR = ('172.28.213.231', 7655)
 
 def main():
     #Create a TCP socket
