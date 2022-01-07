@@ -55,7 +55,7 @@ int main(int argc, char const *argv[]) {
     if (argc > 2) {
         printf("Usage: %s [pathname]\n", argv[0]);
     }
-    const char * pathname = (argc == 2 ? argv[1] : "11counter.txt");
+    const char * pathname = (argc == 2) ? argv[1] : "11counter.txt";
     
     //0644 - r/w for user, read-only for group and others
     int fd = open(pathname, O_CREAT | O_RDWR, 0644);
@@ -80,18 +80,17 @@ int main(int argc, char const *argv[]) {
     }
 
     if (child_id == 0) {
+        
         //this code is executed in child process only
         if(execution("child", fs, fd) != 0) {
             fprintf(stderr, "child execution failed\n");
             fclose(fs);
             return 1;
         }
-
         return 0;
     }
     
     //this code is executed in parent process only
-
     pid_t res = wait(NULL); 
     if (res == -1) {
         perror("wait");
