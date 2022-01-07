@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+
 int main(int argc, char const *argv[]) {
     
     if (argc > 2) {
@@ -24,35 +25,36 @@ int main(int argc, char const *argv[]) {
         close(fd);
         return 1;
     }
+
     int current_count;
     errno = 0;
     int fsc_res = fscanf(fs, "%d", &current_count);
-    printf("fsc_res = %d\n", fsc_res);
-    if (fsc_res == EOF) {
-        if(errno == 0)
+    
+    if (fsc_res == EOF && errno == 0) {
             fprintf(fs, "%d", 1);//first execution, write 1
-        else {
-            perror("fscanf");
-            fclose(fs);
-            return 1;
-        } 
-    } else {
+    } else if (fsc_res == 1) {
         //not first execution
         printf("current_count = %d\n", current_count);
-        
+        //clear file
         if (ftruncate(fd, 0) == -1) {
             perror("ftruncate");
             fclose(fs);
             return 1;
         }
+        //set the file position indicator to the beginning of the file.
+        rewind(fs);
         current_count++;
         printf("current_count++ = %d\n", current_count);
-        if(fprintf(fs, "%d", current_count) < 0) {
+        if(fprintf(fs, "%-d", current_count) < 0) {
             perror("fprintf");
             fclose(fs);
             return 1;
         }
-    }    
+    } else {
+        perror("fscanf");
+        fclose(fs);
+        return 1;
+    }
     
     if(fclose(fs) == -1) {
         perror("fclose");
