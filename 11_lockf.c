@@ -6,8 +6,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <string.h>
 
-int execution(const char * owner, FILE * fs, int fd) {
+volatile int g_last_signal;
+
+void sig_handler(int signum) {
+    g_last_signal = signum;
+}
+
+int execution(FILE * fs, int fd) {
     //block file, read value, clear file, write ++value, unblock file
     
     rewind(fs);
@@ -15,7 +22,7 @@ int execution(const char * owner, FILE * fs, int fd) {
         perror("lockf");
         return 1;
     }
-    printf("%s works\n", owner);
+    printf("Running\n");
     int current_count;
     errno = 0;
     int fsc_res = fscanf(fs, "%d", &current_count);
@@ -24,15 +31,19 @@ int execution(const char * owner, FILE * fs, int fd) {
         fprintf(fs, "%d", 1);//first execution, write 1
     } else if (fsc_res == 1) {
         //not first execution
-        printf("%s current_count = %d\n", owner, current_count);
+        printf("current_count = %d\n", current_count);
         //clear file
         if (ftruncate(fd, 0) == -1) {
             perror("ftruncate");
             return 1;
         }
+        
+        pause();//waiting for SIGCONT to continue
+        printf("%s\n", strsignal(g_last_signal));
+        
         //set the file position indicator to the beginning of the file.
         rewind(fs);
-        printf("%s ++current_count = %d\n", owner, ++current_count);
+        printf("++current_count = %d\n", ++current_count);
         if(fprintf(fs, "%-d", current_count) < 0) {
             perror("fprintf");
             return 1;
@@ -71,35 +82,14 @@ int main(int argc, char const *argv[]) {
         return 1;
     }
     
-    pid_t child_id = fork();
-    
-    if (child_id < 0) {
-        perror("fork");
-        fclose(fs);
-        return 1;
-    }
 
-    if (child_id == 0) {
-        
-        //this code is executed in child process only
-        if(execution("child", fs, fd) != 0) {
-            fprintf(stderr, "child execution failed\n");
-            fclose(fs);
-            return 1;
-        }
-        return 0;
-    }
-    
-    //this code is executed in parent process only
-    pid_t res = wait(NULL); 
-    if (res == -1) {
-        perror("wait");
-        fclose(fs);
-        return 1;
-    }
+    struct sigaction sig_act;
+    sig_act.sa_handler = sig_handler;
+    sigaction(SIGCONT, &sig_act, NULL);
 
-    if(execution("parent", fs, fd) != 0) {
-        fprintf(stderr, "parent execution failed\n");
+
+    if(execution(fs, fd) != 0) {
+        fprintf(stderr, "execution failed\n");
         fclose(fs);
         return 1;
     }
