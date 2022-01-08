@@ -8,17 +8,12 @@
 #include <errno.h>
 #include <string.h>
 
-volatile int g_last_signal;
-
-void sig_handler(int signum) {
-    g_last_signal = signum;
-}
-
 int execution(FILE * fs, int fd) {
     //block file, read value, clear file, write ++value, unblock file
     
-    rewind(fs);
-    if(lockf(fd, F_LOCK, 0) == -1) {//exclusive lock also for read not to read invalid value
+    rewind(fs);//set the file position indicator to the beginning of the file so that
+               //lockf(, , 0) will block the whole file (starting from the beginning)
+    if(lockf(fd, F_LOCK, 0) == -1) {//exclusive lock also for fscanf not to read invalid value
         perror("lockf");
         return 1;
     }
@@ -26,34 +21,30 @@ int execution(FILE * fs, int fd) {
     int current_count;
     errno = 0;
     int fsc_res = fscanf(fs, "%d", &current_count);
+    printf("fsc_res = %d\n", fsc_res);
 
     if (fsc_res == EOF && errno == 0) {
-        fprintf(fs, "%d", 1);//first execution, write 1
-    } else if (fsc_res == 1) {
-        //not first execution
-        printf("current_count = %d\n", current_count);
+            current_count = 0;//no executions before
+    } else if (fsc_res == 1) {//current_count = number of executions
         //clear file
         if (ftruncate(fd, 0) == -1) {
             perror("ftruncate");
             return 1;
-        }
-        
-        pause();//waiting for SIGCONT to continue
-        printf("%s\n", strsignal(g_last_signal));
-        
-        //set the file position indicator to the beginning of the file.
+        }        
+        //set the file position indicator to the beginning of the file
         rewind(fs);
-        printf("++current_count = %d\n", ++current_count);
-        if(fprintf(fs, "%-d", current_count) < 0) {
-            perror("fprintf");
-            return 1;
-        }
-    } else {
+    } else {//fsc_res == 0 (matching error) or (fsc_res = EOF) && (errno != 0) (read error)
         perror("fscanf");
         return 1;
     }
     
-    rewind(fs);
+    printf("current_count = %d\n", current_count);
+    printf("++current_count = %d\n", ++current_count);
+    if(fprintf(fs, "%d", current_count) < 0) {
+        perror("fprintf");
+        return 1;
+    }
+    //fprintf leaves offset at the beginning of the file, no rewind(fs) needed
     if(lockf(fd, F_ULOCK, 0) == -1) {
         perror("lockf");
         return 1;
@@ -81,12 +72,6 @@ int main(int argc, char const *argv[]) {
         close(fd);
         return 1;
     }
-    
-
-    struct sigaction sig_act;
-    sig_act.sa_handler = sig_handler;
-    sigaction(SIGCONT, &sig_act, NULL);
-
 
     if(execution(fs, fd) != 0) {
         fprintf(stderr, "execution failed\n");
