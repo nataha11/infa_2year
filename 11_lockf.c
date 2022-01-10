@@ -9,10 +9,8 @@
 #include <string.h>
 
 int execution(FILE * fs, int fd) {
-    //block file, read value, clear file, write ++value, unblock file
-    
-    rewind(fs);//set the file position indicator to the beginning of the file so that
-               //lockf(, , 0) will block the whole file (starting from the beginning)
+    //block file, read value, clear file, write ++value
+    //unblock file later (in fclose)
     if(lockf(fd, F_LOCK, 0) == -1) {//exclusive lock also for fscanf not to read invalid value
         perror("lockf");
         return 1;
@@ -26,12 +24,7 @@ int execution(FILE * fs, int fd) {
     if (fsc_res == EOF && errno == 0) {
             current_count = 0;//no executions before
     } else if (fsc_res == 1) {//current_count = number of executions
-        //clear file
-        if (ftruncate(fd, 0) == -1) {
-            perror("ftruncate");
-            return 1;
-        }        
-        //set the file position indicator to the beginning of the file
+        //set the file position indicator to the beginning of the file (to overwrite value)
         rewind(fs);
     } else {//fsc_res == 0 (matching error) or (fsc_res = EOF) && (errno != 0) (read error)
         perror("fscanf");
@@ -40,15 +33,17 @@ int execution(FILE * fs, int fd) {
     
     printf("current_count = %d\n", current_count);
     printf("++current_count = %d\n", ++current_count);
+    
     if(fprintf(fs, "%d", current_count) < 0) {
         perror("fprintf");
         return 1;
     }
-    //fprintf leaves offset at the beginning of the file, no rewind(fs) needed
-    if(lockf(fd, F_ULOCK, 0) == -1) {
-        perror("lockf");
+    
+    //fclose() does not guarantee that file data is flushed to the disk immediately on closing the file
+    if(fflush(fs) == EOF) {//the contents of the stream buffer are written to file, buffer is discarded
+        perror("fflush");  //fs remains open
         return 1;
-    }
+    }    
     return 0;
 }
 
@@ -78,12 +73,11 @@ int main(int argc, char const *argv[]) {
         fclose(fs);
         return 1;
     }
-
-    if(fclose(fs) == EOF) {
+    
+    if(fclose(fs) == EOF) {//unlock inside
         perror("fclose");
         return 1;
     }
-
     return 0;
 }
 
